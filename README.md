@@ -43,13 +43,13 @@ only on the standard library.
 
 If you provide a validator function, it will be called whenever an attempt
 is made to set a value, whether at construction time or later by `et[i] =
-value` or `et.fieldname = value`. It is passed an attribute `index` and an
+value` or `et.fieldname = value`. It is passed an attribute `name` and an
 attribute `value`. It should check the value and either return the value (or
 an acceptable alternative value) which will be the one actually set, or
 raise a `ValueError`.
 
-    >>> def validate_rgba(index, value):
-    ...     if index == 3: # alpha channel
+    >>> def validate_rgba(name, value):
+    ...     if name == 'alpha':
     ...         if not (0.0 <= value <= 1.0):
     ...             return 1.0 # silently default to opaque
     ...     elif not (0 <= value <= 255):

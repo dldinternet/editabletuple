@@ -41,8 +41,8 @@ Rgb(red=238, green=130, blue=238)
 
 Example #3: with defaults and a validator
 
->>> def validate_rgba(index, value):
-...     if index == 3: # alpha channel
+>>> def validate_rgba(name, value):
+...     if name == 'alpha':
 ...         if not (0.0 <= value <= 1.0):
 ...             return 1.0 # silently default to opaque
 ...     elif not (0 <= value <= 255):
@@ -101,7 +101,7 @@ Note that dataclasses aren't indexable or iterable, so aren't comparable
 with tuples, namedtuples, or editabletuples.
 '''
 
-__version__ = '1.0.3'
+__version__ = '1.1.0'
 
 
 def editabletuple(classname, *fieldnames, defaults=None, validator=None):
@@ -120,7 +120,7 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
 
     validator is an optional function. It is called whenever an attempt is
     made to set a value, whether at construction time or later by et[i] =
-    value or et.fieldname = value. It is passed an attribute index and an
+    value or et.fieldname = value. It is passed an attribute name and an
     attribute value. It should check the value and either return the value
     (or an acceptable alternative value) which will be the one actually set,
     or raise a ValueError.
@@ -165,8 +165,7 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
 
     def _update(self, name, value):
         if self._validator is not None:
-            index = self.__class__.__slots__.index(name)
-            value = self._validator(index, value)
+            value = self._validator(name, value)
         object.__setattr__(self, name, value) # This stops inheritability
 
     def _sanitize_index(self, index):
@@ -206,13 +205,13 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
 
     if len(fieldnames) == 1 and isinstance(fieldnames[0], str):
         fieldnames = fieldnames[0].split()
-    return type(classname, (), dict(__init__=init, __repr__=repr,
-                _sanitize_index=_sanitize_index, __getitem__=getitem,
-                __setitem__=setitem, __setattr__=setattr,
-                asdict=property(asdict), _defaults=defaults,
-                _validator=staticmethod(validator), _update=_update,
-                __len__=length, __iter__=iter, __eq__=eq, __lt__=lt,
-                __slots__=fieldnames))
+    attributes = dict(
+        __init__=init, __repr__=repr, _sanitize_index=_sanitize_index,
+        __getitem__=getitem, __setitem__=setitem, __setattr__=setattr,
+        asdict=property(asdict), _defaults=defaults,
+        _validator=staticmethod(validator), _update=_update, __len__=length,
+        __iter__=iter, __eq__=eq, __lt__=lt, __slots__=fieldnames)
+    return type(classname, (), attributes)
 
 
 if __name__ == '__main__':
