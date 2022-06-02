@@ -74,6 +74,14 @@ ValueError: color value must be 0-255, got 299
 Traceback (most recent call last):
     ...
 ValueError: color value must be 0-255, got -65
+>>> color = Rgba(green=99, blue=256)
+Traceback (most recent call last):
+    ...
+ValueError: color value must be 0-255, got 256
+>>> color = Rgba(100, 200, 300)
+Traceback (most recent call last):
+    ...
+ValueError: color value must be 0-255, got 300
 
 Curiously, on Python 3.8.10 and 3.10.4 on 64-bit Linux I get these results:
 
@@ -88,12 +96,14 @@ Curiously, on Python 3.8.10 and 3.10.4 on 64-bit Linux I get these results:
     e = E(1, 2, 3)
 
     for x in (t, n, e):
-        print(sys.getsizeof(x), x)
-
+        print(sys.getsizeof(x), x, type(x))
     # output:
-    #   64 (1, 2, 3)
-    #   64 N(x=1, y=2, z=3)
-    #   56 E(x=1, y=2, z=3)
+    #   64 (1, 2, 3) <class 'tuple'>
+    #   64 N(x=1, y=2, z=3) <class '__main__.N'>
+    #   56 E(x=1, y=2, z=3) <class 'editabletuple.E'>
+
+Note that dataclasses aren't indexable or iterable, so aren't comparable
+with tuples, namedtuples, or editabletuples.
 '''
 
 __version__ = '1.0.0'
