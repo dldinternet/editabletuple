@@ -97,11 +97,28 @@ ValueError: color value must be 0-255, got 300
 >>> color
 Rgba(red=100, green=200, blue=250, alpha=1.0)
 
+Example #4: comparisons
+
+>>> Point = editabletuple('Point', 'x y')
+>>> p = Point(3, 4)
+>>> q = Point(3, 5)
+>>> p < q
+True
+>>> q > p
+True
+>>> p == q
+False
+>>> r = Point(*p)
+>>> r == p
+True
+>>> r != p
+False
+
 Note that dataclasses aren't indexable or iterable, so aren't comparable
 with tuples, namedtuples, or editabletuples.
 '''
 
-__version__ = '1.1.0'
+__version__ = '1.1.1'
 
 
 def editabletuple(classname, *fieldnames, defaults=None, validator=None):
