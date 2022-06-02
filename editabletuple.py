@@ -106,7 +106,7 @@ Note that dataclasses aren't indexable or iterable, so aren't comparable
 with tuples, namedtuples, or editabletuples.
 '''
 
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 
 def editabletuple(classname, *fieldnames, defaults=None, validator=None):
