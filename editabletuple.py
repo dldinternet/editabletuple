@@ -118,6 +118,8 @@ Note that dataclasses aren't indexable or iterable, so aren't comparable
 with tuples, namedtuples, or editabletuples.
 '''
 
+import functools
+
 __version__ = '1.1.1'
 
 
@@ -228,7 +230,7 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
         asdict=property(asdict), _defaults=defaults,
         _validator=staticmethod(validator), _update=_update, __len__=length,
         __iter__=iter, __eq__=eq, __lt__=lt, __slots__=fieldnames)
-    return type(classname, (), attributes)
+    return functools.total_ordering(type(classname, (), attributes))
 
 
 if __name__ == '__main__':
