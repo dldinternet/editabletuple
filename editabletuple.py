@@ -12,6 +12,8 @@ be accessed by index et[i] or by fieldname et.name.
 If you provide a validator, it will be used when new instances are created
 and updated.
 
+The classes returned by editabletuple() are not designed to be subclassed.
+
 Example #1: no defaults; no validator
 
 >>> Options = editabletuple('Options', 'maxcolors shape zoom restore')
@@ -39,12 +41,13 @@ Rgb(red=238, green=130, blue=238)
 
 Example #3: with defaults and a validator
 
->>> def validate_rgba(self, index, value):
+>>> def validate_rgba(index, value):
 ...     if index == 3: # alpha channel
 ...         if not (0.0 <= value <= 1.0):
-...             self[index] = 1.0 # silently default to opaque
+...             return 1.0 # silently default to opaque
 ...     elif not (0 <= value <= 255):
 ...         raise ValueError(f'color value must be 0-255, got {value}')
+...     return value # must return a valid value or raise ValueError
 >>>
 >>> Rgba = editabletuple('Rgba', 'red', 'green', 'blue', 'alpha',
 ...                      defaults=(0, 0, 0, 1.0), validator=validate_rgba)
@@ -61,18 +64,23 @@ Rgba(red=238, green=130, blue=238, alpha=1.0)
 >>> color = Rgba(green=99)
 >>> color
 Rgba(red=0, green=99, blue=0, alpha=1.0)
->>> assert color.green == 99
+>>> assert color[1] == color.green == 99
 >>> color.red = 128
->>> assert color[2] == 0
+>>> assert color[2] == color.blue == 0
 >>> color[2] = 240
->>> assert color[2] == 240
+>>> assert color[2] == color.blue == 240
 >>> color[-1] = 0.5
+>>> assert color[-1] == color.alpha == 0.5
 >>> color
 Rgba(red=128, green=99, blue=240, alpha=0.5)
 >>> color[1] = 299
 Traceback (most recent call last):
     ...
 ValueError: color value must be 0-255, got 299
+>>> color.green = 399
+Traceback (most recent call last):
+    ...
+ValueError: color value must be 0-255, got 399
 >>> color.blue = -65
 Traceback (most recent call last):
     ...
@@ -89,30 +97,11 @@ ValueError: color value must be 0-255, got 300
 >>> color
 Rgba(red=100, green=200, blue=250, alpha=1.0)
 
-Curiously, on Python 3.8.10 and 3.10.4 on 64-bit Linux I get these results:
-
-    import sys
-    from collections import namedtuple
-    from editabletuple import editabletuple
-
-    t = (1, 2, 3)
-    N = namedtuple('N', 'x y z')
-    n = N(1, 2, 3)
-    E = editabletuple('E', 'x', 'y', 'z')
-    e = E(1, 2, 3)
-
-    for x in (t, n, e):
-        print(sys.getsizeof(x), x)
-    # output:
-    #   64 (1, 2, 3)
-    #   64 N(x=1, y=2, z=3)
-    #   56 E(x=1, y=2, z=3)
-
 Note that dataclasses aren't indexable or iterable, so aren't comparable
 with tuples, namedtuples, or editabletuples.
 '''
 
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 
 def editabletuple(classname, *fieldnames, defaults=None, validator=None):
@@ -129,11 +118,12 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
     defaults is an optional sequence of default values; if not given or if
     fewer than the number of fields, None is used as the default.
 
-    validator is an optional function that is passed the editabletuple, an
-    attribute index and an attribute value. whenever an attempt is made to
-    set a value, e.g., by et[i] = value or et.fieldname = value. It should
-    check the value and either leave it if valid, or change it to an
-    acceptable alternative, or raise a ValueError.
+    validator is an optional function. It is called whenever an attempt is
+    made to set a value, whether at construction time or later by et[i] =
+    value or et.fieldname = value. It is passed an attribute index and an
+    attribute value. It should check the value and either return the value
+    (or an acceptable alternative value) which will be the one actually set,
+    or raise a ValueError.
 
     See the module docstring for examples.
     '''
@@ -147,16 +137,13 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
             default = (self._defaults[index] if self._defaults is not None
                        and index < len(self._defaults) else None)
             value = args[index] if index < len(args) else default
-            setattr(self, name, value)
+            setattr(self, name, value) # will call _validator if present
         names = set(fields)
         for name, value in kwargs.items():
             if name not in names:
                 raise TypeError(f'{self.__class__.__name__} does not have '
                                 f' a {name} field')
-            setattr(self, name, value)
-        if self._validator is not None: # must be done after all fields set
-            for index in range(len(fields)):
-                self._validator(index, getattr(self, fields[index]))
+            setattr(self, name, value) # will call _validator if present
 
     def repr(self):
         pairs = []
@@ -170,16 +157,17 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
         return getattr(self, self.__class__.__slots__[index])
 
     def setitem(self, index, value):
-        index = self._sanitize_index(index)
-        if self._validator is not None:
-            self._validator(index, value) # might raise ValueError
-        setattr(self, self.__class__.__slots__[index], value)
+        name = self.__class__.__slots__[self._sanitize_index(index)]
+        self._update(name, value)
 
     def setattr(self, name, value):
+        self._update(name, value)
+
+    def _update(self, name, value):
         if self._validator is not None:
             index = self.__class__.__slots__.index(name)
-            self._validator(index, value) # might raise ValueError
-        object.__setattr__(self, name, value)
+            value = self._validator(index, value)
+        object.__setattr__(self, name, value) # This stops inheritability
 
     def _sanitize_index(self, index):
         if isinstance(index, slice):
@@ -222,8 +210,9 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
                 _sanitize_index=_sanitize_index, __getitem__=getitem,
                 __setitem__=setitem, __setattr__=setattr,
                 asdict=property(asdict), _defaults=defaults,
-                _validator=validator, __len__=length, __iter__=iter,
-                __eq__=eq, __lt__=lt, __slots__=fieldnames))
+                _validator=staticmethod(validator), _update=_update,
+                __len__=length, __iter__=iter, __eq__=eq, __lt__=lt,
+                __slots__=fieldnames))
 
 
 if __name__ == '__main__':

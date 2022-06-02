@@ -41,12 +41,20 @@ only on the standard library.
 
 ## Example #3: with defaults and a validator
 
-    >>> def validate_rgba(self, index, value):
+If you provide a validator function, it will be called whenever an attempt
+is made to set a value, whether at construction time or later by `et[i] =
+value` or `et.fieldname = value`. It is passed an attribute `index` and an
+attribute `value`. It should check the value and either return the value (or
+an acceptable alternative value) which will be the one actually set, or
+raise a `ValueError`.
+
+    >>> def validate_rgba(index, value):
     ...     if index == 3: # alpha channel
     ...         if not (0.0 <= value <= 1.0):
-    ...             self[index] = 1.0 # silently default to opaque
+    ...             return 1.0 # silently default to opaque
     ...     elif not (0 <= value <= 255):
     ...         raise ValueError(f'color value must be 0-255, got {value}')
+    ...     return value # must return a valid value or raise ValueError
     >>>
     >>> Rgba = editabletuple('Rgba', 'red', 'green', 'blue', 'alpha',
     ...                      defaults=(0, 0, 0, 1.0), validator=validate_rgba)
