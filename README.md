@@ -6,6 +6,9 @@ with a fixed sequence of fields, similar to a namedtuple, except editable.
 Each instance of a class created by the editabletuple function's fields can
 be accessed by index et[i] or by fieldname et.name.
 
+If you provide a validator, it will be used when new instances are created
+and updated.
+
 To install just use `python3 -m pip install editabletuple`.
 
 Or just copy the `editabletuple.py` file which is self-contained and depends
@@ -76,25 +79,5 @@ only on the standard library.
     Traceback (most recent call last):
         ...
     ValueError: color value must be 0-255, got -65
-
-Curiously, on Python 3.8.10 and 3.10.4 on 64-bit Linux I get these results:
-
-    import sys
-    from collections import namedtuple
-    from editabletuple import editabletuple
-
-    t = (1, 2, 3)
-    N = namedtuple('N', 'x y z')
-    n = N(1, 2, 3)
-    E = editabletuple('E', 'x', 'y', 'z')
-    e = E(1, 2, 3)
-
-    for x in (t, n, e):
-        print(sys.getsizeof(x), x)
-
-    # output:
-    #   64 (1, 2, 3)
-    #   64 N(x=1, y=2, z=3)
-    #   56 E(x=1, y=2, z=3)
 
 **License: GPLv3**

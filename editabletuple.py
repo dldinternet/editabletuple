@@ -9,6 +9,9 @@ with a fixed sequence of fields, similar to a namedtuple, except editable.
 Each instance of a class created by the editabletuple function's fields can
 be accessed by index et[i] or by fieldname et.name.
 
+If you provide a validator, it will be used when new instances are created
+and updated.
+
 Example #1: no defaults; no validator
 
 >>> Options = editabletuple('Options', 'maxcolors shape zoom restore')
