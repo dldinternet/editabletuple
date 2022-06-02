@@ -1,4 +1,6 @@
 #!/bin/bash
+echo testing...
+./editabletuple.py
 tokei -f -slines -tPython -esetup.py
 unrecognized.py -q
 python3 -m flake8 --ignore=W504,W503,E261,E303 .
