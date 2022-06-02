@@ -1,12 +1,17 @@
 # editabletuple
 
-This module provides the editabletuple() function for creating classes
+This module provides the `editabletuple()` function for creating classes
 with a fixed sequence of fields, similar to a namedtuple, except editable.
 
 Each instance of a class created by the editabletuple function's fields can
 be accessed by index et[i] or by fieldname et.name.
 
-Example #1: no defaults; no validator
+To install just use `python3 -m pip install editabletuple`.
+
+Or just copy the `editabletuple.py` file which is self-contained and depends
+only on the standard library.
+
+## Example #1: no defaults; no validator
 
     >>> Options = editabletuple('Options', 'maxcolors shape zoom restore')
     >>> options = Options(5, 'square', 0.9, True)
@@ -18,7 +23,7 @@ Example #1: no defaults; no validator
     >>> options
     Options(maxcolors=7, shape='square', zoom=0.8, restore=False)
 
-Example #2: with defaults but no validator
+## Example #2: with defaults but no validator
 
     >>> Rgb = editabletuple('Rgb', 'red green blue', defaults=(0, 0, 0))
     >>> black = Rgb()
@@ -31,7 +36,7 @@ Example #2: with defaults but no validator
     >>> violet
     Rgb(red=238, green=130, blue=238)
 
-Example #3: with defaults and a validator
+## Example #3: with defaults and a validator
 
     >>> def validate_rgba(self, index, value):
     ...     if index == 3: # alpha channel
@@ -91,3 +96,5 @@ Curiously, on Python 3.8.10 and 3.10.4 on 64-bit Linux I get these results:
     #   64 (1, 2, 3)
     #   64 N(x=1, y=2, z=3)
     #   56 E(x=1, y=2, z=3)
+
+**License: GPLv3**
