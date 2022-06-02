@@ -3,14 +3,11 @@
 # License: GPLv3
 
 '''
-The editabletuple function is used to create simple classes with a fixed
-sequence of fields, similar to a namedtuple.
+This module provides the editabletuple() function for creating classes
+with a fixed sequence of fields, similar to a namedtuple, except editable.
 
 Each instance of a class created by the editabletuple function's fields can
 be accessed by index et[i] or by fieldname et.name.
-
-These classes are ideal for prototyping, or for creating simple classes
-where a basic validator is sufficient.
 
 Example #1: no defaults; no validator
 
@@ -98,6 +95,8 @@ Curiously, on Python 3.8.10 and 3.10.4 on 64-bit Linux I get these results:
     #   64 N(x=1, y=2, z=3)
     #   56 E(x=1, y=2, z=3)
 '''
+
+__version__ = '1.0.0'
 
 
 def editabletuple(classname, *fieldnames, defaults=None, validator=None):

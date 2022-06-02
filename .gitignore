@@ -42,4 +42,3 @@ dub.selections.json
 .sconsign.dblite
 .mypy_cache
 zig-cache
-st.sh
