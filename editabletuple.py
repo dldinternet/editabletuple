@@ -14,8 +14,7 @@ where a basic validator is sufficient.
 
 Example #1: no defaults; no validator
 
->>> Options = editabletuple('Options', 'maxcolors', 'shape', 'zoom',
-...                         'restore')
+>>> Options = editabletuple('Options', 'maxcolors shape zoom restore')
 >>> options = Options(5, 'square', 0.9, True)
 >>> options
 Options(maxcolors=5, shape='square', zoom=0.9, restore=True)
@@ -27,7 +26,7 @@ Options(maxcolors=7, shape='square', zoom=0.8, restore=False)
 
 Example #2: with defaults but no validator
 
->>> Rgb = editabletuple('Rgb', 'red', 'green', 'blue', defaults=(0, 0, 0))
+>>> Rgb = editabletuple('Rgb', 'red green blue', defaults=(0, 0, 0))
 >>> black = Rgb()
 >>> black
 Rgb(red=0, green=0, blue=0)
@@ -78,12 +77,39 @@ ValueError: color value must be 0-255, got 299
 Traceback (most recent call last):
     ...
 ValueError: color value must be 0-255, got -65
+
+Curiously, on Python 3.8.10 and 3.10.4 on 64-bit Linux I get these results:
+
+    import sys
+    from collections import namedtuple
+    from editabletuple import editabletuple
+
+    t = (1, 2, 3)
+    N = namedtuple('N', 'x y z')
+    n = N(1, 2, 3)
+    E = editabletuple('E', 'x', 'y', 'z')
+    e = E(1, 2, 3)
+
+    for x in (t, n, e):
+        print(sys.getsizeof(x), x)
+
+    # output:
+    #   64 (1, 2, 3)
+    #   64 N(x=1, y=2, z=3)
+    #   56 E(x=1, y=2, z=3)
 '''
 
 
 def editabletuple(classname, *fieldnames, defaults=None, validator=None):
     '''Returns a Class with the given classname and fieldnames whose
     attributes can be accessed by index or fieldname.
+
+    classname is the name of the class to create: this should also be the
+    name the returned class is bound to, e.g.,
+    Point = editabletuple('Point', 'x y').
+
+    fieldnames may be one or more fieldnames, e.g., 'x', 'y', 'z', or a
+    single str of space-separated fieldnames, e.g., 'x y z'.
 
     defaults is an optional sequence of default values; if not given or if
     fewer than the number of fields, None is used as the default.
@@ -97,7 +123,6 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
     See the module docstring for examples.
     '''
 
-    # TODO could I replace with new & __new__?
     def init(self, *args, **kwargs):
         fields = self.__class__.__slots__
         if len(args) + len(kwargs) > len(fields):
@@ -176,6 +201,8 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
             return False
         return tuple(self) < tuple(other)
 
+    if len(fieldnames) == 1 and isinstance(fieldnames[0], str):
+        fieldnames = fieldnames[0].split()
     return type(classname, (), dict(__init__=init, __repr__=repr,
                 _sanitize_index=_sanitize_index, __getitem__=getitem,
                 __setitem__=setitem, __setattr__=setattr,
