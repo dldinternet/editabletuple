@@ -12,8 +12,6 @@ be accessed by index et[i] or by fieldname et.name.
 If you provide a validator, it will be used when new instances are created
 and updated.
 
-The classes returned by editabletuple() are not designed to be subclassed.
-
 Example #1: no defaults; no validator
 
 >>> Options = editabletuple('Options', 'maxcolors shape zoom restore')
@@ -114,13 +112,35 @@ True
 >>> r != p
 False
 
+Example #5: subclassing
+
+>>> import math
+>>> class Point(editabletuple('Point', 'x y')):
+...    def reverse(self):
+...        self.x, self.y = self.y, self.x
+...    @property
+...    def reversed(self):
+...        return self.__class__(self.y, self.x)
+>>>
+>>> p = Point(5, 12)
+>>> q = p.reversed
+>>> p != q
+True
+>>> q
+Point(x=12, y=5)
+>>> q.reverse()
+>>> q
+Point(x=5, y=12)
+>>> p == q
+True
+
 Note that dataclasses aren't indexable or iterable, so aren't comparable
 with tuples, namedtuples, or editabletuples.
 '''
 
 import functools
 
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
 
 def editabletuple(classname, *fieldnames, defaults=None, validator=None):
@@ -185,7 +205,7 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
     def _update(self, name, value):
         if self._validator is not None:
             value = self._validator(name, value)
-        object.__setattr__(self, name, value) # This stops inheritability
+        object.__setattr__(self, name, value)
 
     def _sanitize_index(self, index):
         if isinstance(index, slice):

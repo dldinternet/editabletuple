@@ -88,4 +88,6 @@ raise a `ValueError`.
         ...
     ValueError: color value must be 0-255, got -65
 
+These examples—and some others—are in the module docstring.
+
 **License: GPLv3**
