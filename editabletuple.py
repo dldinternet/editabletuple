@@ -34,7 +34,7 @@ Rgb(red=0, green=0, blue=128)
 >>> violet
 Rgb(red=238, green=130, blue=238)
 
-# Example #3: with defaults and a validator
+Example #3: with defaults and a validator
 
 >>> def validate_rgba(self, index, value):
 ...     if index == 3: # alpha channel
