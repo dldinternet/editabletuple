@@ -135,6 +135,10 @@ Point(x=3, y=4)
 Traceback (most recent call last):
     ...
 AttributeError: __delitem__
+>>> del p[1:3]
+Traceback (most recent call last):
+    ...
+AttributeError: __delitem__
 >>> p
 Point(x=3, y=4)
 >>> p.z = 99
@@ -174,7 +178,7 @@ with tuples, namedtuples, or editabletuples.
 
 import functools
 
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 
 
 def editabletuple(classname, *fieldnames, defaults=None, validator=None):
