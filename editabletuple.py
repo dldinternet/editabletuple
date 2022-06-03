@@ -95,7 +95,7 @@ ValueError: color value must be 0-255, got 300
 >>> color
 Rgba(red=100, green=200, blue=250, alpha=1.0)
 
-Example #4: comparisons
+Example #4: operators
 
 >>> Point = editabletuple('Point', 'x y')
 >>> p = Point(3, 4)
@@ -110,6 +110,10 @@ False
 >>> r == p
 True
 >>> r != p
+False
+>>> 5 in q
+True
+>>> 5 in p
 False
 
 Example #5: subclassing
@@ -140,7 +144,7 @@ with tuples, namedtuples, or editabletuples.
 
 import functools
 
-__version__ = '1.1.2'
+__version__ = '1.1.3'
 
 
 def editabletuple(classname, *fieldnames, defaults=None, validator=None):
@@ -227,7 +231,13 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
     def length(self):
         return len(self.__class__.__slots__)
 
-    def iter(self): # implicitly supports tuple(obj) and list(obj)
+    def contains(self, value): # prefer to do explicitly instead of iter
+        for name in self.__class__.__slots__:
+            if getattr(self, name) == value:
+                return True
+        return False
+
+    def iter(self): # implicitly supports tuple(obj), list(obj)
         fields = self.__class__.__slots__
         for i in range(len(fields)):
             yield getattr(self, fields[i])
@@ -247,7 +257,7 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
     attributes = dict(
         __init__=init, __repr__=repr, _sanitize_index=_sanitize_index,
         __getitem__=getitem, __setitem__=setitem, __setattr__=setattr,
-        asdict=property(asdict), _defaults=defaults,
+        __contains__=contains, asdict=property(asdict), _defaults=defaults,
         _validator=staticmethod(validator), _update=_update, __len__=length,
         __iter__=iter, __eq__=eq, __lt__=lt, __slots__=fieldnames)
     return functools.total_ordering(type(classname, (), attributes))
