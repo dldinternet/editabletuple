@@ -4,8 +4,8 @@ This module provides the `editabletuple()` function for creating classes
 with a fixed sequence of fields, similar to a namedtuple, except editable.
 
 Each instance of a class created by the `editabletuple()` function's fields
-can be accessed by index `et[i]` or by fieldname `et.name`. Although fields
-can be read and written, they cannot be added or deleted.
+can be accessed by index `et[i]` (or by slice), or by fieldname `et.name`.
+Although fields can be read and written, they cannot be added or deleted.
 
 If you provide a validator, it will be used when new instances are created
 and updated.

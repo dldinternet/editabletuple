@@ -7,8 +7,8 @@ This module provides the editabletuple() function for creating classes
 with a fixed sequence of fields, similar to a namedtuple, except editable.
 
 Each instance of a class created by the editabletuple function's fields can
-be accessed by index et[i] or by fieldname et.name. Although fields can be
-read and written, they cannot be added or deleted.
+be accessed by index et[i] (or by slice), or by fieldname et.name. Although
+fields can be read and written, they cannot be added or deleted.
 
 If you provide a validator, it will be used when new instances are created
 and updated.
@@ -95,6 +95,15 @@ ValueError: color value must be 0-255, got 300
 >>> color = Rgba(100, 200, 250, 75)
 >>> color
 Rgba(red=100, green=200, blue=250, alpha=1.0)
+>>> color[:3]
+[100, 200, 250]
+>>> color[:]
+[100, 200, 250, 1.0]
+>>> color
+Rgba(red=100, green=200, blue=250, alpha=1.0)
+>>> color[1:3] = (20, 25)
+>>> color
+Rgba(red=100, green=20, blue=25, alpha=1.0)
 
 Example #4: operators
 
@@ -135,7 +144,7 @@ AttributeError: 'Point' object has no attribute 'z'
 >>> p[3] = 5
 Traceback (most recent call last):
     ...
-IndexError: Point: index 3 out of range
+IndexError: list index out of range
 
 Example #5: subclassing
 
@@ -165,7 +174,7 @@ with tuples, namedtuples, or editabletuples.
 
 import functools
 
-__version__ = '1.1.4'
+__version__ = '1.2.0'
 
 
 def editabletuple(classname, *fieldnames, defaults=None, validator=None):
@@ -220,12 +229,19 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
         return f'{self.__class__.__name__}({kwargs})'
 
     def __getitem__(self, index):
-        index = self._sanitize_index(index)
-        return getattr(self, self.__class__.__slots__[index])
+        fields = self.__class__.__slots__
+        if isinstance(index, slice):
+            return [getattr(self, fields[i])
+                    for i in range(*index.indices(len(fields)))]
+        return getattr(self, fields[index])
 
     def __setitem__(self, index, value):
-        name = self.__class__.__slots__[self._sanitize_index(index)]
-        self._update(name, value)
+        fields = self.__class__.__slots__
+        if isinstance(index, slice):
+            for i, v in zip(range(*index.indices(len(fields))), value):
+                self._update(fields[i], v)
+        else:
+            self._update(fields[index], value)
 
     def __delattr__(self, _name):
         raise AttributeError('__delattr__')
@@ -237,20 +253,6 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
         if self._validator is not None:
             value = self._validator(name, value)
         object.__setattr__(self, name, value)
-
-    def _sanitize_index(self, index):
-        if isinstance(index, slice):
-            if index.stop is not None or index.step is not None:
-                raise IndexError(f'{self.__class__.__name__} cannot '
-                                 f'use slices {index}')
-            index = index.start
-        length = len(self.__class__.__slots__)
-        if index < 0:
-            index += length
-        if index >= length:
-            raise IndexError(f'{self.__class__.__name__}: index {index} '
-                             'out of range')
-        return index
 
     def __len__(self):
         return len(self.__class__.__slots__)
@@ -280,12 +282,12 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
         fieldnames = fieldnames[0].split()
     attributes = dict(
         __init__=__init__, asdict=property(asdict), __repr__=__repr__,
-        _sanitize_index=_sanitize_index, __getitem__=__getitem__,
-        __setitem__=__setitem__, __delattr__=__delattr__,
-        __setattr__=__setattr__, __contains__=__contains__,
-        _defaults=defaults, _validator=staticmethod(validator),
-        _update=_update, __len__=__len__, __iter__=__iter__, __eq__=__eq__,
-        __lt__=__lt__, __slots__=fieldnames)
+        __getitem__=__getitem__, __setitem__=__setitem__,
+        __delattr__=__delattr__, __setattr__=__setattr__,
+        __contains__=__contains__, _defaults=defaults,
+        _validator=staticmethod(validator), _update=_update,
+        __len__=__len__, __iter__=__iter__, __eq__=__eq__, __lt__=__lt__,
+        __slots__=fieldnames)
     return functools.total_ordering(type(classname, (), attributes))
 
 
