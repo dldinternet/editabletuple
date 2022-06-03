@@ -115,6 +115,18 @@ False
 True
 >>> 5 in p
 False
+>>> del p.y
+Traceback (most recent call last):
+    ...
+TypeError: Point cannot delete attributes
+>>> p
+Point(x=3, y=4)
+>>> del p[0]
+Traceback (most recent call last):
+    ...
+AttributeError: __delitem__
+>>> p
+Point(x=3, y=4)
 
 Example #5: subclassing
 
@@ -203,6 +215,10 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
         name = self.__class__.__slots__[self._sanitize_index(index)]
         self._update(name, value)
 
+    def delattr(self, _):
+        raise TypeError(
+            f'{self.__class__.__name__} cannot delete attributes')
+
     def setattr(self, name, value):
         self._update(name, value)
 
@@ -214,7 +230,7 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
     def _sanitize_index(self, index):
         if isinstance(index, slice):
             if index.stop is not None or index.step is not None:
-                raise IndexError(f'{self.__class__.__name__}: cannot '
+                raise IndexError(f'{self.__class__.__name__} cannot '
                                  f'use slices {index}')
             index = index.start
         length = len(self.__class__.__slots__)
@@ -256,10 +272,11 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
         fieldnames = fieldnames[0].split()
     attributes = dict(
         __init__=init, __repr__=repr, _sanitize_index=_sanitize_index,
-        __getitem__=getitem, __setitem__=setitem, __setattr__=setattr,
-        __contains__=contains, asdict=property(asdict), _defaults=defaults,
-        _validator=staticmethod(validator), _update=_update, __len__=length,
-        __iter__=iter, __eq__=eq, __lt__=lt, __slots__=fieldnames)
+        __getitem__=getitem, __setitem__=setitem, __delattr__=delattr, 
+        __setattr__=setattr, __contains__=contains, asdict=property(asdict),
+        _defaults=defaults, _validator=staticmethod(validator),
+        _update=_update, __len__=length, __iter__=iter, __eq__=eq,
+        __lt__=lt, __slots__=fieldnames)
     return functools.total_ordering(type(classname, (), attributes))
 
 
