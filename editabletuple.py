@@ -8,7 +8,9 @@ with a fixed sequence of fields, similar to a namedtuple, except editable.
 
 Each instance of a class created by the editabletuple function's fields can
 be accessed by index et[i] (or by slice), or by fieldname et.name. Although
-fields can be read and written, they cannot be added or deleted.
+fields can be read and written, they cannot be added or deleted. Since
+instances are mutable they are not hashable, so can't be used in sets or as
+dict keys.
 
 If you provide a validator, it will be used when new instances are created
 and updated.
