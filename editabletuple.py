@@ -15,6 +15,11 @@ dict keys.
 If you provide a validator, it will be used when new instances are created
 and updated.
 
+In addition to access by name and index, editabletuples support len(), in,
+iteration (e.g., for value in et), and the comparison operators. They also
+provide an asdict property. To obtain a tuple or list simply use tuple(et)
+or list(et).
+
 Example #1: no defaults; no validator
 
 >>> Options = editabletuple('Options', 'maxcolors shape zoom restore')
@@ -40,7 +45,7 @@ Rgb(red=0, green=0, blue=128)
 >>> violet
 Rgb(red=238, green=130, blue=238)
 
-Example #3: with defaults and a validator
+Example #3: with defaults and a validator — and some API examples
 
 >>> def validate_rgba(name, value):
 ...     if name == 'alpha':
@@ -106,6 +111,14 @@ Rgba(red=100, green=200, blue=250, alpha=1.0)
 >>> color[1:3] = (20, 25)
 >>> color
 Rgba(red=100, green=20, blue=25, alpha=1.0)
+>>> [component for component in color]
+[100, 20, 25, 1.0]
+>>> list(color)
+[100, 20, 25, 1.0]
+>>> tuple(color)
+(100, 20, 25, 1.0)
+>>> color.asdict
+{'red': 100, 'green': 20, 'blue': 25, 'alpha': 1.0}
 
 Example #4: operators
 
@@ -188,7 +201,7 @@ with tuples, namedtuples, or editabletuples.
 
 import functools
 
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 
 
 def editabletuple(classname, *fieldnames, defaults=None, validator=None):
@@ -212,7 +225,8 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
     (or an acceptable alternative value) which will be the one actually set,
     or raise a ValueError.
 
-    See the module docstring for examples.
+    See the module docstring for examples and more about the editabletuple
+    API.
     '''
 
     def __init__(self, *args, **kwargs):
