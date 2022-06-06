@@ -1,8 +1,8 @@
 # editabletuple
 
-This module provides the editabletuple() and editableobject() functions.
+This module provides the `editabletuple()` and `editableobject()` functions.
 
-The editabletuple() function is used tor creating classes with a fixed
+The `editabletuple()` function is used tor creating classes with a fixed
 sequence of fields, similar to a namedtuple, except editable.
 
 Each instance of a class created by the `editabletuple()` function's fields
@@ -13,12 +13,12 @@ Since instances are mutable they can't be used in sets or as dict keys.
 If you provide a validator, it will be used when new instances are created
 and updated.
 
-The editableobject() function creates classes very similar to those created
-by editabletuple(). The essential difference is that editableobject()'s
-class's instances don't support indexing or iteration, so support only
-fieldname access. They also have an addtional totuple property (not needed
-for editabletuple()s since tuple(et) is sufficient due to their iteration
-support).
+The `editableobject()` function creates classes very similar to those
+created by `editabletuple()`. The essential difference is that
+``editableobject()``'s class's instances don't support indexing or
+iteration, so support only fieldname access. They also have an addtional
+`totuple` property (not needed for ``editabletuple()``s since `tuple(et)` is
+sufficient due to their iteration support).
 
 See the function docstrings for examples and more about the editabletuple
 and editableobject APIs.
@@ -102,7 +102,7 @@ raise a `ValueError`.
         ...
     ValueError: color value must be 0-255, got -65
 
-These examples—and several some others—are in the module's function's
+These examples—and several others—are in the module's function's
 docstrings.
 
 **License: GPLv3**
