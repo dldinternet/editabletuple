@@ -1,3 +1,7 @@
+# TODO:
+# Add another function, editableobject(), which is similar to
+# editabletuple but which does _not_ support iteration or indexing.
+
 editabletuple.py
 
 README.md
