@@ -21,10 +21,11 @@ and editableobject APIs.
 
 import functools
 
-__version__ = '1.3.1'
+__version__ = '1.4.0'
 
 
-def editabletuple(classname, *fieldnames, defaults=None, validator=None):
+def editabletuple(classname, *fieldnames, defaults=None, validator=None,
+                  doc=None):
     '''Returns a Class with the given classname and fieldnames whose
     attributes can be accessed by index or fieldname.
 
@@ -44,6 +45,10 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
     attribute value. It should check the value and either return the value
     (or an acceptable alternative value) which will be the one actually set,
     or raise a ValueError.
+
+    doc will become the class's docstring; if None (the default) a default
+    docstring will be created, to avoid this provide a custom str (or just
+    '' for no docstring).
 
     Each instance of a class created by the editabletuple() function's
     fields can be accessed by index et[i] (or by slice), or by fieldname
@@ -70,6 +75,13 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
     >>> options[2] -= 0.1
     >>> options
     Options(maxcolors=7, shape='square', zoom=0.8, restore=False)
+    >>> for line in options.__doc__.splitlines(): print(line)
+    Returns Options.
+    <BLANKLINE>
+    field: maxcolors
+    field: shape
+    field: zoom
+    field: restore
 
     Example #2: with defaults but no validator
 
@@ -83,6 +95,12 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
     >>> violet = Rgb(238, 130, 238)
     >>> violet
     Rgb(red=238, green=130, blue=238)
+    >>> for line in violet.__doc__.splitlines(): print(line)
+    Returns Rgb.
+    <BLANKLINE>
+    field: red (default=0)
+    field: green (default=0)
+    field: blue (default=0)
 
     Example #3: with defaults and a validator — and some API examples
 
@@ -234,34 +252,6 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
     >>> p.distance_to(Point(8, 12))
     3.0
     '''
-
-    def __init__(self, *args, **kwargs):
-        fields = self.__class__.__slots__
-        if len(args) + len(kwargs) > len(fields):
-            raise TypeError(f'{self.__class__.__name__} accepts up to '
-                            f'{len(fields)} args; got {len(args)}')
-        for index, name in enumerate(fields):
-            default = (self._defaults[index] if self._defaults is not None
-                       and index < len(self._defaults) else None)
-            value = args[index] if index < len(args) else default
-            setattr(self, name, value) # will call _validator if present
-        names = set(fields)
-        for name, value in kwargs.items():
-            if name not in names:
-                raise TypeError(f'{self.__class__.__name__} does not have '
-                                f' a {name} field')
-            setattr(self, name, value) # will call _validator if present
-
-    def asdict(self):
-        return {name: getattr(self, name) for name in self.__slots__}
-
-    def __repr__(self):
-        pairs = []
-        for name in self.__class__.__slots__:
-            pairs.append((name, getattr(self, name)))
-        kwargs = ', '.join(f'{name}={value!r}' for name, value in pairs)
-        return f'{self.__class__.__name__}({kwargs})'
-
     def __getitem__(self, index):
         fields = self.__class__.__slots__
         if isinstance(index, slice):
@@ -276,9 +266,6 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
                 self._update(fields[i], v)
         else:
             self._update(fields[index], value)
-
-    def __delattr__(self, _name):
-        raise AttributeError('__delattr__')
 
     def __setattr__(self, name, value):
         self._update(name, value)
@@ -314,6 +301,7 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
 
     if len(fieldnames) == 1 and isinstance(fieldnames[0], str):
         fieldnames = fieldnames[0].split()
+    doc = _doc(classname, fieldnames, defaults) if doc is None else doc
     attributes = dict(
         __init__=__init__, asdict=property(asdict), __repr__=__repr__,
         __getitem__=__getitem__, __setitem__=__setitem__,
@@ -321,11 +309,12 @@ def editabletuple(classname, *fieldnames, defaults=None, validator=None):
         __contains__=__contains__, _defaults=defaults,
         _validator=staticmethod(validator), _update=_update,
         __len__=__len__, __iter__=__iter__, __eq__=__eq__, __lt__=__lt__,
-        __slots__=fieldnames)
+        __slots__=fieldnames, __doc__=doc)
     return functools.total_ordering(type(classname, (), attributes))
 
 
-def editableobject(classname, *fieldnames, defaults=None, validator=None):
+def editableobject(classname, *fieldnames, defaults=None, validator=None,
+                   doc=None):
     '''
     Returns a Class with the given classname and fieldnames whose
     attributes can be accessed by fieldname.
@@ -346,6 +335,10 @@ def editableobject(classname, *fieldnames, defaults=None, validator=None):
     value. It should check the value and either return the value (or an
     acceptable alternative value) which will be the one actually set, or
     raise a ValueError.
+
+    doc will become the class's docstring; if None (the default) a default
+    docstring will be created, to avoid this provide a custom str (or just
+    '' for no docstring).
 
     Each instance of a class created by the editableobject() function's
     fields can be accessed by fieldname, eo.name. Although fields can be
@@ -384,6 +377,75 @@ def editableobject(classname, *fieldnames, defaults=None, validator=None):
     Rgb(red=238, green=130, blue=238)
 
     Example #3: with defaults and a validator — and some API examples
+
+    This validator always succeeds because it returns a valid default for
+    any invalid value.
+
+    >>> def _validate_format(name, value):
+    ...     if name == 'indent':
+    ...         if value == '' or (value.isspace() and len(value) < 33):
+    ...             return value
+    ...         return '  '
+    ...     if name == 'wrap_width':
+    ...         if value is None or value == 0 or 40 <= value <= 240:
+    ...             return value
+    ...         return 96
+    ...     if name == 'max_list_in_line':
+    ...         if 1 <= value <= 120:
+    ...             return value
+    ...         return 10
+    ...     if name == 'max_fields_in_line':
+    ...         if 1 <= value <= 120:
+    ...             return value
+    ...         return 5
+    ...     if name == 'max_short_len':
+    ...         if 24 <= value <= 60:
+    ...             return value
+    ...         return 32
+    >>>
+    >>> Format = editableobject(
+    ...     'Format', 'indent', 'wrap_width', 'max_list_in_line',
+    ...     'max_fields_in_line', 'max_short_len',
+    ...     defaults=('  ', 96, 10, 5, 32),
+    ...     validator=_validate_format)
+    >>> fmt = Format() # default
+    >>> fmt.indent == '  ' and fmt.wrap_width == 96
+    True
+    >>> fmt.max_list_in_line == 10 and fmt.max_fields_in_line == 5
+    True
+    >>> fmt.max_short_len == 32
+    True
+    >>> fmt.indent = 'abc'
+    >>> fmt.indent == '  '
+    True
+    >>> fmt.indent = '\\t'
+    >>> fmt.indent == '\\t'
+    True
+    >>> fmt.wrap_width = 0
+    >>> fmt.wrap_width == 0
+    True
+    >>> fmt.wrap_width = 999
+    >>> fmt.wrap_width == 96
+    True
+    >>> fmt.wrap_width = None
+    >>> fmt.wrap_width is None
+    True
+    >>> fmt.wrap_width = 30
+    >>> fmt.wrap_width == 96
+    True
+    >>> fmt.wrap_width = 240
+    >>> fmt.wrap_width == 240
+    True
+    >>> for line in fmt.__doc__.splitlines(): print(line)
+    Returns Format.
+    <BLANKLINE>
+    field: indent (default='  ')
+    field: wrap_width (default=96)
+    field: max_list_in_line (default=10)
+    field: max_fields_in_line (default=5)
+    field: max_short_len (default=32)
+
+    Example #4: with defaults and a validator — and some API examples
 
     >>> def validate_rgba(name, value):
     ...     if name == 'alpha':
@@ -453,7 +515,7 @@ def editableobject(classname, *fieldnames, defaults=None, validator=None):
     >>> color.astuple
     (100, 200, 250, 1.0)
 
-    Example #4: operators
+    Example #5: operators
 
     >>> Point = editableobject('Point', 'x y')
     >>> p = Point(3, 4)
@@ -498,7 +560,7 @@ def editableobject(classname, *fieldnames, defaults=None, validator=None):
         ...
     TypeError: 'Point' object does not support item assignment
 
-    Example #5: subclassing
+    Example #6: subclassing
 
     >>> import math
     >>> class Point(editableobject('Point', 'x y')):
@@ -528,39 +590,8 @@ def editableobject(classname, *fieldnames, defaults=None, validator=None):
     >>> p.distance_to(Point(8, 12))
     3.0
     '''
-
-    def __init__(self, *args, **kwargs):
-        fields = self.__class__.__slots__
-        if len(args) + len(kwargs) > len(fields):
-            raise TypeError(f'{self.__class__.__name__} accepts up to '
-                            f'{len(fields)} args; got {len(args)}')
-        for index, name in enumerate(fields):
-            default = (self._defaults[index] if self._defaults is not None
-                       and index < len(self._defaults) else None)
-            value = args[index] if index < len(args) else default
-            setattr(self, name, value) # will call _validator if present
-        names = set(fields)
-        for name, value in kwargs.items():
-            if name not in names:
-                raise TypeError(f'{self.__class__.__name__} does not have '
-                                f' a {name} field')
-            setattr(self, name, value) # will call _validator if present
-
-    def asdict(self):
-        return {name: getattr(self, name) for name in self.__slots__}
-
     def astuple(self):
         return tuple(getattr(self, name) for name in self.__slots__)
-
-    def __repr__(self):
-        pairs = []
-        for name in self.__class__.__slots__:
-            pairs.append((name, getattr(self, name)))
-        kwargs = ', '.join(f'{name}={value!r}' for name, value in pairs)
-        return f'{self.__class__.__name__}({kwargs})'
-
-    def __delattr__(self, _name):
-        raise AttributeError('__delattr__')
 
     def __setattr__(self, name, value):
         if self._validator is not None:
@@ -579,13 +610,59 @@ def editableobject(classname, *fieldnames, defaults=None, validator=None):
 
     if len(fieldnames) == 1 and isinstance(fieldnames[0], str):
         fieldnames = fieldnames[0].split()
+    doc = _doc(classname, fieldnames, defaults) if doc is None else doc
     attributes = dict(
         __init__=__init__, asdict=property(asdict),
         astuple=property(astuple), __repr__=__repr__,
         __delattr__=__delattr__, __setattr__=__setattr__,
         _defaults=defaults, _validator=staticmethod(validator),
-        __eq__=__eq__, __lt__=__lt__, __slots__=fieldnames)
+        __eq__=__eq__, __lt__=__lt__, __slots__=fieldnames, __doc__=doc)
     return functools.total_ordering(type(classname, (), attributes))
+
+
+def __init__(self, *args, **kwargs):
+    fields = self.__class__.__slots__
+    if len(args) + len(kwargs) > len(fields):
+        raise TypeError(f'{self.__class__.__name__} accepts up to '
+                        f'{len(fields)} args; got {len(args)}')
+    for index, name in enumerate(fields):
+        default = (self._defaults[index] if self._defaults is not None
+                   and index < len(self._defaults) else None)
+        value = args[index] if index < len(args) else default
+        setattr(self, name, value) # will call _validator if present
+    names = set(fields)
+    for name, value in kwargs.items():
+        if name not in names:
+            raise TypeError(f'{self.__class__.__name__} does not have '
+                            f' a {name} field')
+        setattr(self, name, value) # will call _validator if present
+
+
+def asdict(self):
+    return {name: getattr(self, name) for name in self.__slots__}
+
+
+def __repr__(self):
+    pairs = []
+    for name in self.__class__.__slots__:
+        pairs.append((name, getattr(self, name)))
+    kwargs = ', '.join(f'{name}={value!r}' for name, value in pairs)
+    return f'{self.__class__.__name__}({kwargs})'
+
+
+def __delattr__(self, _name):
+    raise AttributeError('__delattr__')
+
+
+def _doc(classname, fieldnames, defaults):
+    doc = [f'Returns {classname}.\n']
+    for i, name in enumerate(fieldnames):
+        value = defaults[i] if defaults and i < len(defaults) else None
+        if value is None:
+            doc.append(f'field: {name}')
+        else:
+            doc.append(f'field: {name} (default={value!r})')
+    return '\n'.join(doc)
 
 
 if __name__ == '__main__':

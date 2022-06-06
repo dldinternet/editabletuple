@@ -102,6 +102,7 @@ raise a `ValueError`.
         ...
     ValueError: color value must be 0-255, got -65
 
-These examples—and some others—are in the module's function's docstrings.
+These examples—and several some others—are in the module's function's
+docstrings.
 
 **License: GPLv3**
