@@ -9,9 +9,9 @@ The editabletuple() function is used tor creating classes with a fixed
 sequence of fields, similar to a namedtuple, except editable.
 
 The editableobject() function creates classes very similar to those created
-by editabletuple(). The essential difference is that editabletuple()'s
+by editabletuple(). The essential difference is that editableobject()'s
 class's instances don't support indexing or iteration, so support only
-fieldname access. The also have an addtional totuple property (not needed
+fieldname access. They also have an addtional totuple property (not needed
 for editabletuple()s since tuple(et) is sufficient due to their iteration
 support).
 
@@ -21,7 +21,7 @@ and editableobject APIs.
 
 import functools
 
-__version__ = '1.3.0'
+__version__ = '1.3.1'
 
 
 def editabletuple(classname, *fieldnames, defaults=None, validator=None):
