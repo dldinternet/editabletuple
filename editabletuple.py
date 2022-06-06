@@ -161,6 +161,8 @@ Example #5: subclassing
 ...    @property
 ...    def reversed(self):
 ...        return self.__class__(self.y, self.x)
+...    def distance_to(self, other=Point(0, 0)):
+...        return math.hypot(self.x - other.x, self.y - other.y)
 >>>
 >>> p = Point(5, 12)
 >>> q = p.reversed
@@ -173,6 +175,12 @@ Point(x=12, y=5)
 Point(x=5, y=12)
 >>> p == q
 True
+>>> p.distance_to()
+13.0
+>>> p.distance_to(q)
+0.0
+>>> p.distance_to(Point(8, 12))
+3.0
 
 Note that dataclasses aren't indexable or iterable, so aren't comparable
 with tuples, namedtuples, or editabletuples.
